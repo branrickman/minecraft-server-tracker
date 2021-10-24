@@ -57,7 +57,7 @@ class MinecraftMPScrapper(ServerListScrapper):
 
 
 
-    def scrap_page(self, page_number: int) -> t.List[Server]:
+    def scrap_page(self, page_number: int, online_only: bool=True, with_uptime_higher_than: int=75) -> t.List[Server]:
         self.page = page_number
         self.update_soup()
 
@@ -65,7 +65,24 @@ class MinecraftMPScrapper(ServerListScrapper):
         all_server_elements = self.soup.select(r'.container > table')[0].select(r'tbody > tr')
 
         for server_element in all_server_elements:
-            server_ip, _, server_port = server_element.select_one(r'td:nth-child(2) > strong').get_text(strip=True).lower().partition(':')
+            if isinstance(with_uptime_higher_than, (int, float)):
+                try:
+                    uptime = int(server_element.select_one(r'td:nth-child(4) > span.badge').get_text().strip('%'))
+
+                    if uptime <= with_uptime_higher_than:
+                        continue
+
+                except Exception:
+                    continue
+
+            if online_only:
+                is_online = (server_element.select_one(r'td:nth-child(2) > span.badge').get_text(strip=True) == 'Online')
+
+                if not is_online:
+                    continue
+
+
+            server_ip, _, server_port = server_element.select_one(r'td:nth-child(2) > strong').get_text().lower().partition(':')
 
             if server_ip != 'private server':
                 all_servers.append(Server(
@@ -77,16 +94,16 @@ class MinecraftMPScrapper(ServerListScrapper):
         return all_servers
 
 
-    def scrap(self) -> t.Generator[t.List[Server], None, None]:
+    def scrap(self, from_page: int=1) -> t.Generator[t.List[Server], None, None]:
         try:
-            max_pages = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text(strip=True))
+            max_pages = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text())
 
         except Exception:
             # Guess randomly, if fetching max page number fails.
             # Generator yields as long as a server is found.
             max_pages = 500
 
-        for page in range(1, max_pages):
+        for page in range(from_page, max_pages):
             servers = self.scrap_page(page_number=page)
 
             if len(servers) <= 0:
