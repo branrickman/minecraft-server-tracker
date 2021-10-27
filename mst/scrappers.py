@@ -99,8 +99,6 @@ class MinecraftMPScrapper(ServerListScrapper):
             max_pages = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text())
 
         except Exception:
-            # Guess randomly, if fetching max page number fails.
-            # Generator yields as long as a server is found.
             max_pages = 500
 
         for page in range(from_page, max_pages):
