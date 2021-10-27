@@ -1,0 +1,29 @@
+- Database:
+  - Models:
+    - Model for ***server:
+      - Hostname
+      - Port
+      - Source (from what page was the server scrapped)
+      - *server_record
+
+    - Model for *server_record:
+      - Timestamp
+      - Server latency (in ms)
+      - MC version
+      - Server MOTD/description
+      - Max players online
+      - Players online (number)
+      - **Players online (list)
+      - Is it modded?
+
+    - Model for **player:
+      - UUID
+      - Username
+      - Seen `x` times
+      - Last seen at (datetime)
+      - Last seen at (***server)
+
+- Automatic:
+  - Scraping
+  - Pinging and updating data in the database
+  - Crontab
