@@ -1,10 +1,16 @@
+from mst.settings import DATABASES_PATH
+
 from pathlib import Path
 from datetime import datetime
 
-from playhouse.sqlite_ext import *
+from peewee import *
 
 
 
-# TODO:
-def get_database(path: Path=Path(ROOT_PATH, 'database', f"{datetime.strftime('%x-%X')}.db"), *args, **kwargs):
-    return SqliteExtDatabase(path)
+def get_database(path: Path=Path(f"{DATABASES_PATH}/{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.db").as_posix(), *args, **kwargs):
+    return SqliteDatabase(path, *args, **kwargs)
+
+
+
+if __name__ == "__main__":
+    get_database()
