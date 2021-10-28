@@ -57,7 +57,7 @@ class PingedServer:
 
 
 
-async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrapper(), at_once: int=8, *args, **kwargs):
+async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrapper(), at_once: int=20, *args, **kwargs):
     async def __get_status(scrapped_server: ScrappedServer):
         try:
             status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
