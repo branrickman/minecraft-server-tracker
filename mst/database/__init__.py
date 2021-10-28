@@ -1,4 +1,4 @@
-from mst.settings import DATABASES_PATH
+from mst.settings import DATABASE_PATH, DATABASE_DATETIME_FILE_FORMAT
 
 from pathlib import Path
 from datetime import datetime
@@ -7,10 +7,10 @@ from peewee import *
 
 
 
-def get_database(path: Path=Path(f"{DATABASES_PATH}/{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.db").as_posix(), *args, **kwargs):
-    return SqliteDatabase(path, *args, **kwargs)
+def get_database(database_name: Path=Path(f"{datetime.now().strftime(DATABASE_DATETIME_FILE_FORMAT)}.db"), directory_path: Path=DATABASE_PATH, *args, **kwargs):
+    return SqliteDatabase(Path(directory_path, database_name), *args, **kwargs)
 
 
 
 if __name__ == "__main__":
-    get_database()
+    get_database().connect()

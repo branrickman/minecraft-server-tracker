@@ -27,3 +27,7 @@
   - Scraping
   - Pinging and updating data in the database
   - Crontab
+
+- Async:
+  - Scrap more servers at once
+  - Note: Not happening anytime soon, since it is hard to wrap it around synchronous libraries and I have no experience with it. PRs are welcome

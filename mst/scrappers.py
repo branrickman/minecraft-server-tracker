@@ -7,9 +7,10 @@ from bs4 import BeautifulSoup
 
 
 @dataclass
-class Server:
-    host: str
+class ScrappedServer:
+    host: t.Optional[str] = None
     port: int = 25565
+    is_online: bool = False
     source: str = None
 
 
@@ -33,7 +34,7 @@ class ServerListScrapper():
 
 
 
-    def scrap_page(self, page_number: int) -> t.List[Server]:
+    def scrap_page(self, page_number: int) -> t.List[ScrappedServer]:
         """
             Scraps all servers from a specific page of the server list and returns them as a list of `Server` objects.
         """
@@ -41,7 +42,7 @@ class ServerListScrapper():
         raise NotImplementedError(page_number)
 
 
-    def scrap(self) -> t.Generator[t.List[Server], None, None]:
+    def scrap(self) -> t.Generator[t.List[ScrappedServer], None, None]:
         """
             Scraps all servers from all pages of the entire server list and yields them as lists of `Server` objects.
         """
@@ -53,15 +54,15 @@ class ServerListScrapper():
 class MinecraftMPScrapper(ServerListScrapper):
     def __init__(self) -> None:
         self.source = 'MinecraftMP'
-        super().__init__(url_template="https://minecraft-mp.com/servers/list/{page:d}/")
+        super().__init__(url_template="https://minecraft-mp.com/servers/updated/{page:d}/")
 
 
 
-    def scrap_page(self, page_number: int, online_only: bool=True, with_uptime_higher_than: int=75) -> t.List[Server]:
+    def scrap_page(self, page_number: int, online_only: bool=True, with_uptime_higher_than: int=75) -> t.List[ScrappedServer]:
         self.page = page_number
         self.update_soup()
 
-        all_servers: t.List[Server] = []
+        all_servers: t.List[ScrappedServer] = []
         all_server_elements = self.soup.select(r'.container > table')[0].select(r'tbody > tr')
 
         for server_element in all_server_elements:
@@ -75,26 +76,24 @@ class MinecraftMPScrapper(ServerListScrapper):
                 except Exception:
                     continue
 
-            if online_only:
-                is_online = (server_element.select_one(r'td:nth-child(2) > span.badge').get_text(strip=True) == 'Online')
+            is_online = (server_element.select_one(r'td:nth-child(2) > span.badge').get_text(strip=True) == 'Online')
 
-                if not is_online:
-                    continue
+            if online_only and not is_online:
+                continue
 
+            server_ip, _, server_port = server_element.select_one(r'td:nth-child(2) > strong').get_text().lower().strip().partition(':')
 
-            server_ip, _, server_port = server_element.select_one(r'td:nth-child(2) > strong').get_text().lower().partition(':')
-
-            if server_ip != 'private server':
-                all_servers.append(Server(
-                    source=self.source,
-                    host=server_ip,
-                    port=(int(server_port) if server_port.isdigit() else 25565)
-                ))
+            all_servers.append(ScrappedServer(
+                source=self.source,
+                host=server_ip if server_ip != 'private server' else None,
+                is_online=is_online,
+                port=(int(server_port) if server_port.isdigit() else 25565)
+            ))
     
         return all_servers
 
 
-    def scrap(self, from_page: int=1) -> t.Generator[t.List[Server], None, None]:
+    def scrap(self, from_page: int=1, online_only: bool=True, with_uptime_higher_than: int=75) -> t.Generator[t.List[ScrappedServer], None, None]:
         try:
             max_pages = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text())
 
@@ -102,7 +101,7 @@ class MinecraftMPScrapper(ServerListScrapper):
             max_pages = 500
 
         for page in range(from_page, max_pages):
-            servers = self.scrap_page(page_number=page)
+            servers = self.scrap_page(page_number=page, online_only=online_only, with_uptime_higher_than=with_uptime_higher_than)
 
             if len(servers) <= 0:
                 break
