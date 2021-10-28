@@ -57,7 +57,7 @@ class PingedServer:
 
 
 
-async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrapper(), at_once: int=20, *args, **kwargs):
+async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrapper(), at_once: t.Optional[int]=None, *args, **kwargs):
     async def __get_status(scrapped_server: ScrappedServer):
         try:
             status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
@@ -88,10 +88,18 @@ async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrappe
 
 
     for scrapped_servers in scrapper.scrap(*args, **kwargs):
-        for scrapped_servers_bulk in zip_longest(*[iter(scrapped_servers)]*at_once):
-            scrapped_servers_bulk: t.Tuple[ScrappedServer]
+        if at_once is not None:
+            for scrapped_servers_bulk in zip_longest(*[iter(scrapped_servers)]*at_once):
+                scrapped_servers_bulk: t.Tuple[ScrappedServer]
+                statuses = await asyncio.gather(*[
+                    __get_status(scrapped_server) for scrapped_server in scrapped_servers_bulk if scrapped_server and scrapped_server.host
+                ])
+        
+                yield statuses
+
+        else:
             statuses = await asyncio.gather(*[
-                __get_status(scrapped_server) for scrapped_server in scrapped_servers_bulk if scrapped_server and scrapped_server.host
+                __get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
             ])
     
             yield statuses
