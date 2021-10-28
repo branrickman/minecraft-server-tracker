@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 
 
 
+__all__ = ['ALL_SCRAPPERS', 'ScrappedServer', 'ServerListScrapper', 'MinecraftMPScrapper']
+
+
 @dataclass
 class ScrappedServer:
     host: t.Optional[str] = None
@@ -33,6 +36,11 @@ class ServerListScrapper():
         self.soup = BeautifulSoup(markup=requests.get(self.current_url, *get_args, **get_kwargs).text, features='html.parser')
 
 
+    @property
+    def max_pages(self) -> int:
+        raise NotImplementedError()
+
+
 
     def scrap_page(self, page_number: int) -> t.List[ScrappedServer]:
         """
@@ -42,12 +50,14 @@ class ServerListScrapper():
         raise NotImplementedError(page_number)
 
 
-    def scrap(self) -> t.Generator[t.List[ScrappedServer], None, None]:
-        """
-            Scraps all servers from all pages of the entire server list and yields them as lists of `Server` objects.
-        """
+    def scrap(self, from_page: int=1, *args, **kwargs) -> t.Generator[t.List[ScrappedServer], None, None]:
+        for page in range(from_page, self.max_pages):
+            servers = self.scrap_page(page, *args, **kwargs)
 
-        raise NotImplementedError()
+            if len(servers) <= 0:
+                break
+
+            yield servers
 
 
 
@@ -56,6 +66,16 @@ class MinecraftMPScrapper(ServerListScrapper):
         self.source = 'MinecraftMP'
         super().__init__(url_template="https://minecraft-mp.com/servers/updated/{page:d}/")
 
+
+    @property
+    def max_pages(self) -> int:
+        try:
+            x = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text())
+
+        except Exception:
+            x = 500
+        
+        return x
 
 
     def scrap_page(self, page_number: int, online_only: bool=True, with_uptime_higher_than: int=75) -> t.List[ScrappedServer]:
@@ -93,20 +113,8 @@ class MinecraftMPScrapper(ServerListScrapper):
         return all_servers
 
 
-    def scrap(self, from_page: int=1, online_only: bool=True, with_uptime_higher_than: int=75) -> t.Generator[t.List[ScrappedServer], None, None]:
-        try:
-            max_pages = int(self.soup.select_one(r'.pagination > li:nth-last-child(2) > a').get_text())
 
-        except Exception:
-            max_pages = 500
-
-        for page in range(from_page, max_pages):
-            servers = self.scrap_page(page_number=page, online_only=online_only, with_uptime_higher_than=with_uptime_higher_than)
-
-            if len(servers) <= 0:
-                break
-
-            yield servers
+ALL_SCRAPPERS = [MinecraftMPScrapper]
 
 
 
