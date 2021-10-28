@@ -1,6 +1,10 @@
 import typing as t
 
 import asyncio
+try:
+    import uvloop # type: ignore
+except ImportError:
+    uvloop = None
 
 from peewee import Database
 
@@ -67,6 +71,9 @@ async def scrap_from_all_and_save(*args, **kwargs):
 
 
 if __name__ == "__main__":
+    if uvloop:
+        uvloop.install()
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(scrap_from_all_and_save())
     loop.close()
