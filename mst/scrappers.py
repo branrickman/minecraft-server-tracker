@@ -77,7 +77,7 @@ class MinecraftMPScrapper(ServerListScrapper):
 
             all_servers.append(ScrappedServer(
                 source=self.source,
-                host=server_ip if server_ip != 'private server' else None,
+                host=server_ip.lower() if server_ip != 'private server' else None,
                 port=(int(server_port) if server_port.isdigit() else 25565)
             ))
     
@@ -115,7 +115,7 @@ class MinecraftServerListScrapper(ServerListScrapper):
 
             all_servers.append(ScrappedServer(
                 source=self.source,
-                host=server_ip,
+                host=server_ip.lower(),
                 port=(int(server_port) if server_port.isdigit() else 25565)
             ))
     
@@ -141,7 +141,7 @@ class MinecraftServersScrapper(ServerListScrapper):
 
             all_servers.append(ScrappedServer(
                 source=self.source,
-                host=server_ip,
+                host=server_ip.lower(),
                 port=(int(server_port) if server_port.isdigit() else 25565)
             ))
     
@@ -151,7 +151,7 @@ class MinecraftServersScrapper(ServerListScrapper):
 
 ALL_SCRAPPERS: t.List[t.Type[ServerListScrapper]] = [MinecraftMPScrapper, MinecraftServerListScrapper, MinecraftServersScrapper]
 
-def scrap_from_all(scrappers: t.List[t.Type[ServerListScrapper]]=ALL_SCRAPPERS, *args, **kwargs):
+def scrap_from_all_scrappers(scrappers: t.List[t.Type[ServerListScrapper]]=ALL_SCRAPPERS, *args, **kwargs):
     """
         Reference: https://stackoverflow.com/a/69748260/12422061
     """
@@ -172,6 +172,18 @@ def scrap_from_all(scrappers: t.List[t.Type[ServerListScrapper]]=ALL_SCRAPPERS, 
 
 
 if __name__ == "__main__":
-    for servers in scrap_from_all():
-        for server in servers:
-            print(server)
+    import asyncio
+    try:
+        import uvloop # type: ignore
+    except ImportError:
+        uvloop = None
+
+    from mst.data import scrap_from_all_scrappers_and_save
+
+    if uvloop:
+        uvloop.install()
+
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(scrap_from_all_scrappers_and_save())
+    loop.close()

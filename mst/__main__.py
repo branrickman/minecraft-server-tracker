@@ -4,7 +4,7 @@
         2. `data.py` - Saves the scrapped servers to database. No status is checked yet.
         3. `pinger.py` - Asynchronously ping multiple servers at once from the database and save the results.
     
-    Use `python -m mst` to run. Also check out `screen`, if you're on Linux.
+    Use `python -m mst` to run. CLI will come soon (as mentioned in the `TODO` file)
 
     **Some statistics:**
     - Scrapping entire MinecraftMP server list takes about 
@@ -16,7 +16,7 @@ try:
 except ImportError:
     uvloop = None
 
-from mst.data import scrap_from_all_and_save
+from mst.data import ping_and_update, ping_from_all_scrappers_and_save
 
 
 
@@ -25,5 +25,11 @@ if __name__ == "__main__":
         uvloop.install()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(scrap_from_all_and_save())
+
+    MODE = 0
+    if MODE == 0:
+        loop.run_until_complete(ping_from_all_scrappers_and_save())
+    else:
+        loop.run_until_complete(ping_and_update())
+
     loop.close()

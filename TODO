@@ -1,33 +1,8 @@
-- Database:
-  - Models:
-    - Model for ***server:
-      - Hostname
-      - Port
-      - Source (from what page was the server scrapped)
-      - *server_record
-
-    - Model for *server_record:
-      - Timestamp
-      - Server latency (in ms)
-      - MC version
-      - Server MOTD/description
-      - Max players online
-      - Players online (number)
-      - **Players online (list)
-      - Is it modded?
-
-    - Model for **player:
-      - UUID
-      - Username
-      - Seen `x` times
-      - Last seen at (datetime)
-      - Last seen at (***server)
-
+- CLI tool:
+  - Scrap and save
+  - Ping from saved
+  - Scrap, ping and save
 - Automatic:
   - Scraping
   - Pinging and updating data in the database
-  - Crontab
-
-- Async:
-  - Scrap more servers at once
-  - Note: Not happening anytime soon, since it is hard to wrap it around synchronous libraries and I have no experience with it. PRs are welcome
+  - Crontab(?)

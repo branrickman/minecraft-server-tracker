@@ -9,6 +9,8 @@
 import typing as t
 
 import asyncio
+
+from mst.database import DATABASE
 try:
     import uvloop # type: ignore
 except ImportError:
@@ -19,7 +21,7 @@ from mcstatus import MinecraftServer
 from peewee import Database
 
 from mst.settings import PLAYER_USERNAME_REGEX
-from mst.scrappers import ScrappedServer
+from mst.scrappers import ScrappedServer, scrap_from_all_scrappers
 
 
 
@@ -44,7 +46,7 @@ class PingedServerStatus:
     version: str
     latency: float
     players: PingedPlayerList
-    is_modded: bool
+    is_modded: bool 
 
 
 
@@ -58,42 +60,53 @@ class PingedServer:
 
 
 
-# Circular:
-from mst.data import DATABASE, yield_servers_from_database
+async def get_status(scrapped_server: ScrappedServer):
+    try:
+        status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
 
-async def async_ping_all(from_database: Database=DATABASE, at_once: int=25):
-    async def __get_status(scrapped_server: ScrappedServer):
-        try:
-            status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
-
-            pinged_server_status = PingedServerStatus(
-                description=status.description,
-                version=status.version.name,
-                latency=status.latency,
-                players=PingedPlayerList(
-                    max=status.players.max,
-                    online=status.players.online,
-                    list=[PingedPlayer(uuid=player.id, username=player.name) for player in status.players.sample if PLAYER_USERNAME_REGEX.match(player.username)] if status.players.sample else []
-                ),
-                is_modded='modinfo' in status.raw
-            )
-    
-        except Exception:
-            pinged_server_status = None
-
-
-        return PingedServer(
-            source=scrapped_server.source,
-            host=scrapped_server.host,
-            port=scrapped_server.port,
-            online=pinged_server_status is not None,
-            status=pinged_server_status
+        pinged_server_status = PingedServerStatus(
+            description=status.description,
+            version=status.version.name,
+            latency=status.latency,
+            players=PingedPlayerList(
+                max=status.players.max,
+                online=status.players.online,
+                list=[PingedPlayer(uuid=player.id, username=player.name) for player in status.players.sample if PLAYER_USERNAME_REGEX.match(player.name)] if status.players.sample else []
+            ),
+            is_modded='modinfo' in status.raw
         )
 
+    except Exception:
+        pinged_server_status = None
 
-    for scrapped_servers in yield_servers_from_database(database=from_database, at_once=at_once):
+
+    return PingedServer(
+        source=scrapped_server.source,
+        host=scrapped_server.host,
+        port=scrapped_server.port,
+        online=pinged_server_status is not None,
+        status=pinged_server_status
+    )
+
+
+
+# Circular:
+import mst.data as data
+
+async def ping_all(from_database: Database=DATABASE, at_once: int=25):
+    for scrapped_servers in data.yield_servers_from_database(database=from_database, at_once=at_once):
         statuses = await asyncio.gather(*[
-            __get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
+            get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
+        ])
+    
+        yield statuses
+
+
+
+async def scrap_and_ping_all(*args, **kwargs):
+    for scrapped_servers in scrap_from_all_scrappers(*args, **kwargs):
+        statuses = await asyncio.gather(*[
+            get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
         ])
     
         yield statuses
@@ -105,7 +118,7 @@ if __name__ == "__main__":
         uvloop.install()
 
     async def main():
-        async for servers in async_ping_all(online_only=False, with_uptime_higher_than=1):
+        async for servers in ping_all():
             for server in servers:
                 print(server)
 

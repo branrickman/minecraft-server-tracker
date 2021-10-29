@@ -8,12 +8,12 @@ except ImportError:
 
 from peewee import Database
 
-from mst.pinger import PingedServer
-from mst.database import Player, PlayerRecordsRelationship, Server, ServerRecord, initialize_database
-from mst.scrappers import ScrappedServer, scrap_from_all
+from mst.database import DATABASE, Player, PlayerRecordsRelationship, Server, ServerRecord
+from mst.scrappers import ScrappedServer, scrap_from_all_scrappers
 
+import mst.pinger as pinger
 
-DATABASE = initialize_database()
+_PSS = t.TypeVar('_PSS', pinger.PingedServer, ScrappedServer)
 
 
 
@@ -31,16 +31,15 @@ def yield_servers_from_database(database: Database=DATABASE, at_once: int=25) ->
 
 
 
-# TODO: create generic "server" class
-def save_into_database(server: t.Union[PingedServer, ScrappedServer], database: Database=DATABASE):
+def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
     (Server.replace(
-        hostname=server.host,
+        host=server.host,
         port=server.port,
         source=server.source
     ).execute(database))
-    saved_server = Server.get((Server.hostname == server.host) & (Server.port == server.port)) # type: Server
+    saved_server = Server.get((Server.host == server.host) & (Server.port == server.port)) # type: Server
 
-    if hasattr(server, 'status'):
+    if getattr(server, 'status', None) is not None:
         (ServerRecord.replace(
             latency=server.status.latency,
             version=server.status.version,
@@ -70,8 +69,8 @@ def save_into_database(server: t.Union[PingedServer, ScrappedServer], database: 
 
 
 
-async def scrap_from_all_and_save(*args, **kwargs):
-    for servers in scrap_from_all(*args, **kwargs):
+async def scrap_from_all_scrappers_and_save(*args, **kwargs):
+    for servers in scrap_from_all_scrappers(*args, **kwargs):
         for server in servers:
             if server.host:
                 saved = save_into_database(server=server, database=DATABASE)
@@ -79,22 +78,30 @@ async def scrap_from_all_and_save(*args, **kwargs):
 
 
 
-if __name__ == "__main__":
-    TEST = False
+async def ping_and_update(*args, **kwargs):
+    async for servers in pinger.ping_all(*args, **kwargs):
+        for server in servers:
+            saved = save_into_database(server=server, database=DATABASE)
+            print("Updated:", saved)
 
-    if TEST:
-        for servers in yield_servers_from_database():
-            for server in servers:
-                print(f"{server.ip_address}:")
 
-                for record in server.records:
-                    for player in record.get_players():
-                        print(f"\t- {player.username}")
+
+async def ping_from_all_scrappers_and_save(*args, **kwargs):
+    for scrapped_servers in scrap_from_all_scrappers(*args, **kwargs):
+        statuses = await asyncio.gather(*[
+            pinger.get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
+        ])
     
-    else:
-        if uvloop:
-            uvloop.install()
+        for status in statuses:
+            saved = save_into_database(server=status, database=DATABASE)
+            print("Saved:", saved)
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(scrap_from_all_and_save())
-        loop.close()
+
+
+if __name__ == "__main__":
+    if uvloop:
+        uvloop.install()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(ping_from_all_scrappers_and_save())
+    loop.close()

@@ -40,7 +40,7 @@ class Server(BaseModel):
         - `records` - All record for this server
     """
 
-    hostname = CharField()
+    host = CharField()
     port = IntegerField(default=25565)
     source = CharField(null=True, choices=())
     records: t.Iterable['ServerRecord']
@@ -48,7 +48,7 @@ class Server(BaseModel):
 
     @property
     def ip_address(self) -> str:
-        return f"{self.hostname}:{self.port}"
+        return f"{self.host}:{self.port}"
 
 
 
@@ -146,6 +146,16 @@ def initialize_database(database_name: Path=Path(f"{datetime.now().strftime(DATA
     return database
 
 
+DATABASE = initialize_database()
+
 
 if __name__ == "__main__":
-    initialize_database()
+    from mst.data import yield_servers_from_database
+
+    for servers in yield_servers_from_database():
+        for server in servers:
+            print(f"{server.ip_address}:")
+
+            for record in server.records:
+                for player in record.get_players():
+                    print(f"\t- {player.username}")
