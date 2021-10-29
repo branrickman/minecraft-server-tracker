@@ -3,14 +3,14 @@
 An open source Python 3.9 tool to massively scrap all publicly listed servers from various server lists, ping them and save the results into a database.
 
 ### Currently, it can:
-    - Build SQLite databases of scrapped servers of your choice
-    - Create records of scrapped servers and assign timestamps to them. One server can have as much records as you want - they will all be tied together in the database, where they can be fetched, joined and read.
-    - **The following data is scrapped:**
-        - Server IP address/hostname, port and source (from what webpage was it scraped)
-        - Version, latency, whether the server is modded or not, MOTD, max player count and online player count
-        - Player list along with UUIDs
-    - Pinging is done asynchronously, to be as fast as possible (scraping and pinging ~40,000 servers from 3 server lists takes about 1 hour)
-    - And more(?)
+  - Build SQLite databases of scrapped servers of your choice
+  - Create records of scrapped servers and assign timestamps to them. One server can have as much records as you want - they will all be tied together in the database, where they can be fetched, joined and read.
+  - **The following data is scrapped:**
+      - Server IP address/hostname, port and source (from what webpage was it scraped)
+      - Version, latency, whether the server is modded or not, MOTD, max player count and online player count
+      - Player list along with UUIDs
+  - Pinging is done asynchronously, to be as fast as possible (scraping and pinging ~40,000 servers from 3 server lists takes about 1 hour)
+  - And more(?)
 
 
 **Note** that some plugins/mods may alter what data is sent to the client/this tool through packet manipulation. This means that we have no way to determine whether a fact is true or false when scrapping the servers. For example, if a server says that it is running vanilla, but in fact is running Fabric, this tool says that it runs vanilla. If that server says that it has 1,000 players online but actually doesn't have any, it doesn't matter as this tool will say that it has 1,000 players instead.
