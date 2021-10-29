@@ -25,7 +25,12 @@ __all__ = ['Server', 'ServerRecord', 'Player', 'ALL_MODELS', 'initialize_databas
 
 
 
-class Server(Model):
+class BaseModel(Model):
+    id: int
+
+
+
+class Server(BaseModel):
     """
         - `hostname` - Server hostname/IP address
         - `port` - Server port
@@ -41,12 +46,18 @@ class Server(Model):
     records: t.Iterable['ServerRecord']
 
 
+    @property
+    def ip_address(self) -> str:
+        return f"{self.hostname}:{self.port}"
+
+
+
     class Meta:
         db_table = 'servers'
 
 
 
-class Record(Model):
+class Record(BaseModel):
     """
         - `timestamp` - The timestamp of the record
     """
@@ -79,12 +90,18 @@ class ServerRecord(Record):
     rs_players: t.Iterable['PlayerRecordsRelationship']
 
 
+    def get_players(self) -> t.Iterator['Player']:
+        query = (Player.select().join(PlayerRecordsRelationship, on=PlayerRecordsRelationship.player).where(PlayerRecordsRelationship.record == self.id))
+
+        return query
+
+
     class Meta:
         db_table = 'server_records'
 
 
 
-class Player(Model):
+class Player(BaseModel):
     """
         - `uuid` - UUID
         - `username` - Username
@@ -96,12 +113,18 @@ class Player(Model):
     rs_server_records: t.Iterable['PlayerRecordsRelationship']
 
 
+
+    def seen_at(self, server: Server) -> t.Optional[int]:
+        return PlayerRecordsRelationship.select().where(PlayerRecordsRelationship.player == self).join(ServerRecord, on=PlayerRecordsRelationship.record).where(ServerRecord.server == server).count()
+
+
+
     class Meta:
         db_table = 'players'
 
 
 
-class PlayerRecordsRelationship(Model):
+class PlayerRecordsRelationship(BaseModel):
     player = ForeignKeyField(Player, backref='rs_server_records')
     record = ForeignKeyField(ServerRecord, backref='rs_players')
 

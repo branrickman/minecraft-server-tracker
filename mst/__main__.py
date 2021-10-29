@@ -1,9 +1,13 @@
 """
-    The cycle:
-        1. `scrappers.py`
-        2. `pinger.py`
-        3.1. `database.py`
-            3.2. `save.py`
+    The cycle of this program:
+        1. `scrappers.py` - Scraps Minecraft server IPs and ports from various online server listing sources.
+        2. `data.py` - Saves the scrapped servers to database. No status is checked yet.
+        3. `pinger.py` - Asynchronously ping multiple servers at once from the database and save the results.
+    
+    Use `python -m mst` to run. Also check out `screen`, if you're on Linux.
+
+    **Some statistics:**
+    - Scrapping entire MinecraftMP server list takes about 
 """
 
 import asyncio
@@ -12,7 +16,7 @@ try:
 except ImportError:
     uvloop = None
 
-from mst.save import scrap_from_all_and_save
+from mst.data import scrap_from_all_and_save
 
 
 

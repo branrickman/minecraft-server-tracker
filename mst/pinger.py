@@ -15,10 +15,11 @@ except ImportError:
     uvloop = None
 
 from dataclasses import dataclass
-from itertools import zip_longest
 from mcstatus import MinecraftServer
+from peewee import Database
 
-from mst.scrappers import MinecraftMPScrapper, ScrappedServer, ServerListScrapper
+from mst.settings import PLAYER_USERNAME_REGEX
+from mst.scrappers import ScrappedServer
 
 
 
@@ -57,7 +58,10 @@ class PingedServer:
 
 
 
-async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrapper(), at_once: t.Optional[int]=None, *args, **kwargs):
+# Circular:
+from mst.data import DATABASE, yield_servers_from_database
+
+async def async_ping_all(from_database: Database=DATABASE, at_once: int=25):
     async def __get_status(scrapped_server: ScrappedServer):
         try:
             status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
@@ -69,7 +73,7 @@ async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrappe
                 players=PingedPlayerList(
                     max=status.players.max,
                     online=status.players.online,
-                    list=[PingedPlayer(uuid=player.id, username=player.name) for player in status.players.sample if player.id != '00000000-0000-0000-0000-000000000000'] if status.players.sample else []
+                    list=[PingedPlayer(uuid=player.id, username=player.name) for player in status.players.sample if PLAYER_USERNAME_REGEX.match(player.username)] if status.players.sample else []
                 ),
                 is_modded='modinfo' in status.raw
             )
@@ -82,27 +86,17 @@ async def async_ping_all(scrapper: t.Type[ServerListScrapper]=MinecraftMPScrappe
             source=scrapped_server.source,
             host=scrapped_server.host,
             port=scrapped_server.port,
-            online=True if pinged_server_status else scrapped_server.is_online,
+            online=pinged_server_status is not None,
             status=pinged_server_status
         )
 
 
-    for scrapped_servers in scrapper.scrap(*args, **kwargs):
-        if at_once is not None:
-            for scrapped_servers_bulk in zip_longest(*[iter(scrapped_servers)]*at_once):
-                scrapped_servers_bulk: t.Tuple[ScrappedServer]
-                statuses = await asyncio.gather(*[
-                    __get_status(scrapped_server) for scrapped_server in scrapped_servers_bulk if scrapped_server and scrapped_server.host
-                ])
-        
-                yield statuses
-
-        else:
-            statuses = await asyncio.gather(*[
-                __get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
-            ])
+    for scrapped_servers in yield_servers_from_database(database=from_database, at_once=at_once):
+        statuses = await asyncio.gather(*[
+            __get_status(scrapped_server) for scrapped_server in scrapped_servers if scrapped_server and scrapped_server.host
+        ])
     
-            yield statuses
+        yield statuses
 
             
 
