@@ -9,7 +9,7 @@ An open source Python 3.9 tool to massively scrap all publicly listed servers fr
       - Server IP address/hostname, port and source (from what webpage was it scraped)
       - Version, latency, whether the server is modded or not, MOTD, max player count and online player count
       - Player list along with UUIDs
-  - Pinging is done asynchronously, to be as fast as possible (scraping and pinging ~40,000 servers from 3 server lists takes about 1 hour)
+  - Pinging is done asynchronously, to be as fast as possible (scraping and pinging ~40,000 servers from 3 server lists takes about 1 hour and 20 minutes)
   - And more(?)
 
 
