@@ -18,7 +18,7 @@ An open source Python 3.9 tool to massively scrap all publicly listed servers fr
 Also, check `TODO` and `mst/settings.py`.
 
 
-#### A word about this project:
+### A word about this project:
 
 Recently, I saw FitMC's [video about the Copenheimer project](https://www.youtube.com/watch?v=hoS0PM20KJk). Because I am a data maniac and I like to hoard data myself, I thought that this was a really cool idea. Sadly for me, it isn't open source and the database it was using is private. So I thought: "I can do this too!". And so I tried.
 
