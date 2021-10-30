@@ -72,10 +72,10 @@ class MinecraftMPScrapper(ServerListScrapper):
         self.update_soup()
 
         all_servers: t.List[ScrappedServer] = []
-        all_server_elements = self.soup.select(r'.container > table > tbody > tr')
+        all_ips = self.soup.select(r'.container > table > tbody > tr > td:nth-child(2) > strong')
 
-        for server_element in all_server_elements:
-            server_ip, _, server_port = server_element.select_one(r'td:nth-child(2) > strong').get_text(strip=True).lower().partition(':')
+        for ip in all_ips:
+            server_ip, _, server_port = ip.get_text(strip=True).lower().partition(':')
 
             all_servers.append(ScrappedServer(
                 source=self.source,
@@ -98,29 +98,29 @@ class MinecraftServerListScrapper(ServerListScrapper):
         self.update_soup()
 
         all_servers: t.List[ScrappedServer] = []
-        all_server_elements = self.soup.select(r'#site-wrapper div.serverdatadiv1 > table > tbody > tr')
+        all_ips = self.soup.select(r'.serverdatadiv1 > table > tbody > tr > .n2')
 
 
-        # MSL has a strange behaviour to always return last servers no matter on what page you are.
-        # To prevent infinite loop of same servers, we only return them as long as there are 25 (or more) of them
-        # (which means that there are more unique servers after that page -> 25 servers/per page).
-        if len(all_server_elements) < 25:
-            return []
+        is_enough = False
+        # This server list has a strange behaviour to always return servers no matter on what page you are.
+        # To prevent infinite loop of same servers, we only return them as long as there are max. of them at single page.
+        if len(all_ips) < 25:
+            is_enough = True
 
 
-        for server_element in all_server_elements:
-            _n2 = server_element.select_one(r'.n2')
-            if not _n2:
-                continue
-
-            server_ip, _, server_port = _n2['id'].partition(':')
+        for ip in all_ips:
+            server_ip, _, server_port = ip['id'].strip().lower().partition(':')
 
             all_servers.append(ScrappedServer(
                 source=self.source,
                 host=server_ip.lower(),
                 port=(int(server_port) if server_port.isdigit() else 25565)
             ))
-    
+
+            if is_enough:
+                break
+
+
         return all_servers
 
 
@@ -136,22 +136,133 @@ class MinecraftServersScrapper(ServerListScrapper):
         self.update_soup()
 
         all_servers: t.List[ScrappedServer] = []
-        all_server_elements = self.soup.select(r'#main .serverlist:nth-last-child(1) > tbody > tr')
+        all_ips = self.soup.select(r'.server-ip > button')
 
-        for server_element in all_server_elements:
-            server_ip, _, server_port = server_element.select_one(r'.col-server > .server-ip > button')['data-clipboard-text'].strip().partition(':')
+        for ip in all_ips:
+            server_ip, _, server_port = ip['data-clipboard-text'].strip().lower().partition(':')
 
             all_servers.append(ScrappedServer(
                 source=self.source,
                 host=server_ip.lower(),
                 port=(int(server_port) if server_port.isdigit() else 25565)
             ))
-    
+
+
         return all_servers
 
 
 
-ALL_SCRAPPERS: t.List[t.Type[ServerListScrapper]] = [MinecraftMPScrapper, MinecraftServerListScrapper, MinecraftServersScrapper]
+class ServersMinecraftScrapper(ServerListScrapper):
+    def __init__(self) -> None:
+        self.source = 'servers-minecraft.com'
+        super().__init__(url_template="https://servers-minecraft.com/page/{page:d}")
+
+
+    def scrap_page(self, page_number: int) -> t.List[ScrappedServer]:
+        self.page = page_number
+        self.update_soup()
+
+        all_servers: t.List[ScrappedServer] = []
+        all_ips = self.soup.select(r'.banner-ip button.copy')
+
+        for ip in all_ips:
+            server_ip, _, server_port = ip['data-clipboard-text'].strip().partition(':')
+
+            all_servers.append(ScrappedServer(
+                source=self.source,
+                host=server_ip.lower(),
+                port=(int(server_port) if server_port.isdigit() else 25565)
+            ))
+
+
+        return all_servers
+
+
+
+class MinecraftListScrapper(ServerListScrapper):
+    def __init__(self) -> None:
+        self.source = 'minecraftlist.org'
+        super().__init__(url_template="https://minecraftlist.org/servers?order_by=server_id&page={page:d}")
+
+
+    def scrap_page(self, page_number: int) -> t.List[ScrappedServer]:
+        self.page = page_number
+        self.update_soup()
+
+        all_servers: t.List[ScrappedServer] = []
+        all_ips = self.soup.select(r'.mcp-banner input.server-address')
+
+
+        is_enough = False
+        # This server list has a strange behaviour to always return servers no matter on what page you are.
+        # To prevent infinite loop of same servers, we only return them as long as there are max. of them at single page.
+        if len(all_ips) < 20:
+            is_enough = True
+
+
+        for ip in all_ips:
+            server_ip, _, server_port = ip['value'].strip().partition(':')
+
+            all_servers.append(ScrappedServer(
+                source=self.source,
+                host=server_ip.lower(),
+                port=(int(server_port) if server_port.isdigit() else 25565)
+            ))
+
+            if is_enough:
+                break
+
+
+        return all_servers
+
+
+
+class MinecraftServersListScrapper(ServerListScrapper):
+    def __init__(self) -> None:
+        self.source = 'minecraft-servers-list.org'
+        super().__init__(url_template="https://www.minecraft-servers-list.org/rank/{page:d}")
+
+
+    def scrap_page(self, page_number: int) -> t.List[ScrappedServer]:
+        self.page = page_number
+        self.update_soup()
+
+        all_servers: t.List[ScrappedServer] = []
+        all_ips = self.soup.select(r'.container > table:nth-last-child(2) .copy-ip-trigger')
+
+
+        is_enough = False
+        # This server list has a strange behaviour to always return servers no matter on what page you are.
+        # To prevent infinite loop of same servers, we only return them as long as there are max. of them at single page.
+        if len(all_ips) < 19:
+            is_enough = True
+
+
+        for ip in all_ips:
+            server_ip, _, server_port = ip['data-clipboard-text'].strip().partition(':')
+
+            all_servers.append(ScrappedServer(
+                source=self.source,
+                host=server_ip.lower(),
+                port=(int(server_port) if server_port.isdigit() else 25565)
+            ))
+
+            if is_enough:
+                break
+
+
+        return all_servers
+
+
+
+ALL_SCRAPPERS: t.List[t.Type[ServerListScrapper]] = [
+    MinecraftMPScrapper,
+    MinecraftServerListScrapper,
+    MinecraftServersScrapper,
+    ServersMinecraftScrapper,
+    MinecraftListScrapper,
+    MinecraftServersListScrapper
+]
 
 def scrap_from_all_scrappers(scrappers: t.List[t.Type[ServerListScrapper]]=ALL_SCRAPPERS, *args, **kwargs):
     """

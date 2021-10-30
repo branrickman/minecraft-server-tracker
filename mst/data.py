@@ -37,7 +37,7 @@ def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
         port=server.port
     ).execute(database))
     saved_server = Server.get((Server.host == server.host) & (Server.port == server.port)) # type: Server
-    print("Saved server:", saved_server)
+    print("Saved server:", saved_server, f"({saved_server.ip_address} | {server.source})")
 
     if getattr(server, 'status', None) is not None:
         (ServerRecord.replace(
