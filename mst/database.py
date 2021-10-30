@@ -34,7 +34,6 @@ class Server(BaseModel):
     """
         - `hostname` - Server hostname/IP address
         - `port` - Server port
-        - `source` - From what server list page was the server scrapped
 
         ### Backrefs:
         - `records` - All record for this server
@@ -42,7 +41,6 @@ class Server(BaseModel):
 
     host = CharField()
     port = IntegerField(default=25565)
-    source = CharField(null=True, choices=())
     records: t.Iterable['ServerRecord']
 
 
@@ -68,6 +66,7 @@ class Record(BaseModel):
 
 class ServerRecord(Record):
     """
+        - `source` - From what webpage was this server scrapped
         - `latency` - Server latency (in ms)
         - `version` - Server version
         - `is_modded` - Is the server modded?
@@ -80,6 +79,7 @@ class ServerRecord(Record):
         - `online_players` - Players online (list)
     """
 
+    source = CharField(null=True)
     latency = FloatField(null=True)
     version = CharField(null=True)
     is_modded = BooleanField(default=False)

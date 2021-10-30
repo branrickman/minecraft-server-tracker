@@ -1,7 +1,8 @@
 import typing as t
 
-import requests
+from requests_cache import CachedSession
 from dataclasses import dataclass
+
 from bs4 import BeautifulSoup
 
 
@@ -21,6 +22,7 @@ class ServerListScrapper():
     def __init__(self, url_template: str) -> None:
         self.url_template = url_template
         self.page = 1
+        self.session = CachedSession(cache_name='requests_cache')
 
         self.soup = self.update_soup()
 
@@ -32,7 +34,7 @@ class ServerListScrapper():
 
 
     def update_soup(self, *get_args, **get_kwargs) -> None:
-        self.soup = BeautifulSoup(markup=requests.get(self.current_url, *get_args, **get_kwargs).text, features='html.parser')
+        self.soup = BeautifulSoup(markup=self.session.get(self.current_url, *get_args, **get_kwargs).text, features='lxml')
 
 
 
@@ -183,7 +185,4 @@ if __name__ == "__main__":
     if uvloop:
         uvloop.install()
 
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(scrap_from_all_scrappers_and_save())
-    loop.close()
+    asyncio.run(scrap_from_all_scrappers_and_save())

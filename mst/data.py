@@ -34,13 +34,13 @@ def yield_servers_from_database(database: Database=DATABASE, at_once: int=25) ->
 def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
     (Server.replace(
         host=server.host,
-        port=server.port,
-        source=server.source
+        port=server.port
     ).execute(database))
     saved_server = Server.get((Server.host == server.host) & (Server.port == server.port)) # type: Server
 
     if getattr(server, 'status', None) is not None:
         (ServerRecord.replace(
+            source=server.source,
             latency=server.status.latency,
             version=server.status.version,
             is_modded=server.status.is_modded,

@@ -6,8 +6,8 @@ An open source Python 3.9 tool to massively scrap all publicly listed servers fr
   - Build SQLite databases of scrapped servers of your choice
   - Create records of scrapped servers and assign timestamps to them. One server can have as much records as you want - they will all be tied together in the database, where they can be fetched, joined and read.
   - **The following data is scrapped:**
-      - Server IP address/hostname, port and source (from what webpage was it scraped)
-      - Version, latency, whether the server is modded or not, MOTD, max player count and online player count
+      - Server IP address/hostname and port
+      - Source (from what webpage was it scraped), version, latency, whether the server is modded or not, MOTD, max player count and online player count
       - Player list along with UUIDs
   - Pinging is done asynchronously, to be as fast as possible (scraping and pinging ~40,000 servers from 3 server lists takes about 1 hour)
   - And more(?)

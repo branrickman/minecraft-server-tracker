@@ -10,26 +10,19 @@
     - Scrapping entire MinecraftMP server list takes about 
 """
 
-import asyncio
-try:
-    import uvloop # type: ignore
-except ImportError:
-    uvloop = None
-
-from mst.data import ping_and_update, ping_from_all_scrappers_and_save
+from mst.data import ping_from_all_scrappers_and_save
 
 
 
 if __name__ == "__main__":
+    import asyncio
+    try:
+        import uvloop # type: ignore
+    except ImportError:
+        uvloop = None
+
     if uvloop:
         uvloop.install()
 
-    loop = asyncio.get_event_loop()
 
-    MODE = 0
-    if MODE == 0:
-        loop.run_until_complete(ping_from_all_scrappers_and_save())
-    else:
-        loop.run_until_complete(ping_and_update())
-
-    loop.close()
+    asyncio.run(ping_from_all_scrappers_and_save())
