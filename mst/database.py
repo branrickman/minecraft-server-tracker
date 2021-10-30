@@ -79,7 +79,7 @@ class ServerRecord(Record):
         - `online_players` - Players online (list)
     """
 
-    source = CharField(null=True, unique=True)
+    source = CharField(null=True)
     latency = FloatField(null=True)
     version = CharField(null=True)
     is_modded = BooleanField(default=False)

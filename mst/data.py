@@ -37,6 +37,7 @@ def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
         port=server.port
     ).execute(database))
     saved_server = Server.get((Server.host == server.host) & (Server.port == server.port)) # type: Server
+    print("Saved server:", saved_server)
 
     if getattr(server, 'status', None) is not None:
         (ServerRecord.replace(
@@ -50,6 +51,7 @@ def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
             server=saved_server
         ).execute(database))
         saved_server_record = ServerRecord.get(ServerRecord.server == saved_server) # type: ServerRecord
+        print("Saved record:", saved_server_record)
 
         for player in server.status.players.list:
             (Player.replace(
@@ -62,9 +64,7 @@ def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
                 player=saved_player,
                 record=saved_server_record
             ).execute(database))
-
-
-    return server
+            print("Saved player:", saved_player)
 
 
 
@@ -73,16 +73,14 @@ async def scrap_from_all_scrappers_and_save(*args, **kwargs):
     for servers in scrap_from_all_scrappers(*args, **kwargs):
         for server in servers:
             if server.host:
-                saved = save_into_database(server=server, database=DATABASE)
-                print("Saved:", saved)
+                save_into_database(server=server, database=DATABASE)
 
 
 
 async def ping_and_update(*args, **kwargs):
     async for servers in pinger.ping_all(*args, **kwargs):
         for server in servers:
-            saved = save_into_database(server=server, database=DATABASE)
-            print("Updated:", saved)
+            save_into_database(server=server, database=DATABASE)
 
 
 
@@ -93,8 +91,7 @@ async def ping_from_all_scrappers_and_save(*args, **kwargs):
         ])
     
         for status in statuses:
-            saved = save_into_database(server=status, database=DATABASE)
-            print("Saved:", saved)
+            save_into_database(server=status, database=DATABASE)
 
 
 
@@ -102,6 +99,4 @@ if __name__ == "__main__":
     if uvloop:
         uvloop.install()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(ping_from_all_scrappers_and_save())
-    loop.close()
+    asyncio.run(ping_from_all_scrappers_and_save())
