@@ -1,3 +1,4 @@
+- Find async ORM, so we can save data into DB directly with async
 - CLI tool:
   - Scrap and save
   - Ping from saved

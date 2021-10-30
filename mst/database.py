@@ -79,14 +79,14 @@ class ServerRecord(Record):
         - `online_players` - Players online (list)
     """
 
-    source = CharField(null=True)
+    source = CharField(null=True, unique=True)
     latency = FloatField(null=True)
     version = CharField(null=True)
     is_modded = BooleanField(default=False)
     description = TextField(null=True)
     max_players = IntegerField()
     online_players_number = IntegerField(default=0)
-    server = ForeignKeyField(Server, backref='records', null=True)
+    server = ForeignKeyField(Server, backref='records', null=True, unique=True)
     rs_players: t.Iterable['PlayerRecordsRelationship']
 
 
@@ -108,8 +108,8 @@ class Player(BaseModel):
         - `server_record` - `ServerRecord` where this player was last seen at
     """
 
-    uuid = CharField(max_length=36)
-    username = CharField(max_length=16)
+    uuid = CharField(max_length=36, unique=True)
+    username = CharField(max_length=16, unique=True)
     rs_server_records: t.Iterable['PlayerRecordsRelationship']
 
 

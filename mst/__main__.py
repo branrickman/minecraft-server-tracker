@@ -5,9 +5,6 @@
         3. `pinger.py` - Asynchronously ping multiple servers at once from the database and save the results.
     
     Use `python -m mst` to run. CLI will come soon (as mentioned in the `TODO` file)
-
-    **Some statistics:**
-    - Scrapping entire MinecraftMP server list takes about 
 """
 
 from mst.data import ping_from_all_scrappers_and_save
