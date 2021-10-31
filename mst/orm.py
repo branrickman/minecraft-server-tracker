@@ -4,9 +4,7 @@
     - Record models
 
     **Normal** models hold data that is constant and never changes, such as server address or player username.
-    Although you can change this data, from the perspective of this scrapper, it is permanent since I'm not going to build some advanced systems
-    for username histories (because there are tools like [NameMC](https://namemc.com/) for that purpose already) or server IP address history
-    (because there is no way for the scrapper to know past IPs).
+    Although you can change this data, from the perspective of this scrapper, it is permanent.
 
     **Record** models hold data that can change over time, such as server version (server can update to a new version), server MOTD/description
     (can be changed in server properties), player count, etc.
@@ -18,10 +16,17 @@ from mst.settings import DATABASE_PATH, DATABASE_DATETIME_FILE_FORMAT
 
 from pathlib import Path
 from datetime import datetime
+from dataclasses import dataclass
 
 from peewee import *
 
-__all__ = ['Server', 'ServerRecord', 'Player', 'ALL_MODELS', 'initialize_database']
+
+
+@dataclass
+class Server:
+    host: t.Optional[str] = None
+    port: int = 25565
+    source: str = None
 
 
 
@@ -30,7 +35,7 @@ class BaseModel(Model):
 
 
 
-class Server(BaseModel):
+class DB_Server(BaseModel):
     """
         - `hostname` - Server hostname/IP address
         - `port` - Server port
@@ -41,7 +46,7 @@ class Server(BaseModel):
 
     host = CharField()
     port = IntegerField(default=25565)
-    records: t.Iterable['ServerRecord']
+    records: t.Iterable['DB_ServerRecord']
 
 
     @property
@@ -55,7 +60,7 @@ class Server(BaseModel):
 
 
 
-class Record(BaseModel):
+class DB_Record(BaseModel):
     """
         - `timestamp` - The timestamp of the record
     """
@@ -64,7 +69,7 @@ class Record(BaseModel):
 
 
 
-class ServerRecord(Record):
+class DB_ServerRecord(DB_Record):
     """
         - `source` - From what webpage was this server scrapped
         - `latency` - Server latency (in ms)
@@ -86,12 +91,12 @@ class ServerRecord(Record):
     description = TextField(null=True)
     max_players = IntegerField()
     online_players_number = IntegerField(default=0)
-    server = ForeignKeyField(Server, backref='records', null=True, unique=True)
-    rs_players: t.Iterable['PlayerRecordsRelationship']
+    server = ForeignKeyField(DB_Server, backref='records', null=True, unique=True)
+    rs_players: t.Iterable['DB_PlayerRecordsRelationship']
 
 
-    def get_players(self) -> t.Iterator['Player']:
-        query = (Player.select().join(PlayerRecordsRelationship, on=PlayerRecordsRelationship.player).where(PlayerRecordsRelationship.record == self.id))
+    def get_players(self) -> t.Iterator['DB_Player']:
+        query = (DB_Player.select().join(DB_PlayerRecordsRelationship, on=DB_PlayerRecordsRelationship.player).where(DB_PlayerRecordsRelationship.record == self.id))
 
         return query
 
@@ -101,7 +106,7 @@ class ServerRecord(Record):
 
 
 
-class Player(BaseModel):
+class DB_Player(BaseModel):
     """
         - `uuid` - UUID
         - `username` - Username
@@ -109,13 +114,13 @@ class Player(BaseModel):
     """
 
     uuid = CharField(max_length=36, unique=True)
-    username = CharField(max_length=16, unique=True)
-    rs_server_records: t.Iterable['PlayerRecordsRelationship']
+    username = CharField(max_length=16)
+    rs_server_records: t.Iterable['DB_PlayerRecordsRelationship']
 
 
 
-    def seen_at(self, server: Server) -> t.Optional[int]:
-        return PlayerRecordsRelationship.select().where(PlayerRecordsRelationship.player == self).join(ServerRecord, on=PlayerRecordsRelationship.record).where(ServerRecord.server == server).count()
+    def seen_at(self, server: DB_Server) -> t.Optional[int]:
+        return DB_PlayerRecordsRelationship.select().where(DB_PlayerRecordsRelationship.player == self).join(DB_ServerRecord, on=DB_PlayerRecordsRelationship.record).where(DB_ServerRecord.server == server).count()
 
 
 
@@ -124,9 +129,9 @@ class Player(BaseModel):
 
 
 
-class PlayerRecordsRelationship(BaseModel):
-    player = ForeignKeyField(Player, backref='rs_server_records')
-    record = ForeignKeyField(ServerRecord, backref='rs_players')
+class DB_PlayerRecordsRelationship(BaseModel):
+    player = ForeignKeyField(DB_Player, backref='rs_server_records')
+    record = ForeignKeyField(DB_ServerRecord, backref='rs_players')
 
     
     class Meta:
@@ -135,7 +140,7 @@ class PlayerRecordsRelationship(BaseModel):
 
 
 
-ALL_MODELS: t.List[t.Type[Model]] = [Server, ServerRecord, Player, PlayerRecordsRelationship]
+ALL_MODELS: t.List[t.Type[Model]] = [DB_Server, DB_ServerRecord, DB_Player, DB_PlayerRecordsRelationship]
 
 
 def initialize_database(database_name: Path=Path(f"{datetime.now().strftime(DATABASE_DATETIME_FILE_FORMAT)}.db"), directory_path: Path=DATABASE_PATH, *args, **kwargs) -> SqliteDatabase:
@@ -147,15 +152,3 @@ def initialize_database(database_name: Path=Path(f"{datetime.now().strftime(DATA
 
 
 DATABASE = initialize_database()
-
-
-if __name__ == "__main__":
-    from mst.data import yield_servers_from_database
-
-    for servers in yield_servers_from_database():
-        for server in servers:
-            print(f"{server.ip_address}:")
-
-            for record in server.records:
-                for player in record.get_players():
-                    print(f"\t- {player.username}")

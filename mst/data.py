@@ -8,18 +8,18 @@ except ImportError:
 
 from peewee import Database
 
-from mst.database import DATABASE, Player, PlayerRecordsRelationship, Server, ServerRecord
-from mst.scrappers import ScrappedServer, scrap_from_all_scrappers
+from mst.orm import DATABASE, DB_Player, DB_PlayerRecordsRelationship, DB_Server, DB_ServerRecord
+from mst.scrappers import Server, scrap_from_all_scrappers
 
 import mst.pinger as pinger
 
-_PSS = t.TypeVar('_PSS', pinger.PingedServer, ScrappedServer)
+_PSS = t.TypeVar('_PSS', pinger.PingedServer, Server)
 
 
 
-def yield_servers_from_database(database: Database=DATABASE, at_once: int=25) -> t.Generator[t.List[Server], None, None]:
-    query = (Server.select().bind(database)) # type: t.Iterator[Server]
-    servers: t.List[Server] = []
+def yield_servers_from_database(database: Database=DATABASE, at_once: int=25) -> t.Generator[t.List[DB_Server], None, None]:
+    query = (DB_Server.select().bind(database)) # type: t.Iterator[DB_Server]
+    servers: t.List[DB_Server] = []
 
     for server in query:
         if len(servers) < at_once:
@@ -32,15 +32,15 @@ def yield_servers_from_database(database: Database=DATABASE, at_once: int=25) ->
 
 
 def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
-    (Server.replace(
+    (DB_Server.replace(
         host=server.host,
         port=server.port
     ).execute(database))
-    saved_server = Server.get((Server.host == server.host) & (Server.port == server.port)) # type: Server
+    saved_server = DB_Server.get((DB_Server.host == server.host) & (DB_Server.port == server.port)) # type: DB_Server
     print("Saved server:", saved_server, f"({saved_server.ip_address} | {server.source})")
 
-    if getattr(server, 'status', None) is not None:
-        (ServerRecord.replace(
+    if getattr(server, 'status', None):
+        (DB_ServerRecord.replace(
             source=server.source,
             latency=server.status.latency,
             version=server.status.version,
@@ -50,17 +50,17 @@ def save_into_database(server: _PSS, database: Database=DATABASE) -> _PSS:
             online_players_number=server.status.players.online,
             server=saved_server
         ).execute(database))
-        saved_server_record = ServerRecord.get(ServerRecord.server == saved_server) # type: ServerRecord
+        saved_server_record = DB_ServerRecord.get(DB_ServerRecord.server == saved_server) # type: DB_ServerRecord
         print("Saved record:", saved_server_record)
 
         for player in server.status.players.list:
-            (Player.replace(
+            (DB_Player.replace(
                 uuid=player.uuid,
                 username=player.username,
             ).execute(database))
-            saved_player = Player.get((Player.uuid == player.uuid) & (Player.username == player.username)) # type: Player
+            saved_player = DB_Player.get((DB_Player.uuid == player.uuid) & (DB_Player.username == player.username)) # type: DB_Player
 
-            (PlayerRecordsRelationship.replace(
+            (DB_PlayerRecordsRelationship.replace(
                 player=saved_player,
                 record=saved_server_record
             ).execute(database))

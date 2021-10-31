@@ -3,7 +3,7 @@ mcstatus
 requests
 requests_cache
 
-peewee
+orm
 
 cchardet
 lxml # might fail on Windows, download and install from https://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml instead if that's the case

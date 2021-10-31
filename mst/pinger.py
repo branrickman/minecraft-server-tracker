@@ -10,7 +10,7 @@ import typing as t
 
 import asyncio
 
-from mst.database import DATABASE
+from mst.orm import DATABASE
 try:
     import uvloop # type: ignore
 except ImportError:
@@ -21,7 +21,7 @@ from mcstatus import MinecraftServer
 from peewee import Database
 
 from mst.settings import PLAYER_USERNAME_REGEX
-from mst.scrappers import ScrappedServer, scrap_from_all_scrappers
+from mst.scrappers import Server, scrap_from_all_scrappers
 
 
 
@@ -60,7 +60,7 @@ class PingedServer:
 
 
 
-async def get_status(scrapped_server: ScrappedServer):
+async def get_status(scrapped_server: Server):
     try:
         status = await MinecraftServer(host=scrapped_server.host, port=scrapped_server.port).async_status()
 
