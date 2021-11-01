@@ -14,6 +14,4 @@ PLAYER_USERNAME_REGEX = compile(r'^[a-zA-Z_0-9]{2,16}$')
 """
     Some plugins allow you to show text when hovering on the player list. They actually just create fake players with names in the player list.
     This RegEx checks whether each player name is valid when obtaining player list, so we don't save crap.
-
-    Note: This RegEx also takes into account special usernames from early versions of Minecraft, such as usernames with space or 2 character usernames. 
 """
