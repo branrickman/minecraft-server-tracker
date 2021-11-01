@@ -12,7 +12,7 @@
 
 import typing as t
 
-from mst.settings import DATABASE_PATH, DATABASE_DATETIME_FILE_FORMAT
+from mst.settings import DATABASE_PATH
 
 from pathlib import Path
 from datetime import datetime
@@ -113,7 +113,7 @@ class DB_Player(BaseModel):
         - `server_record` - `ServerRecord` where this player was last seen at
     """
 
-    uuid = CharField(max_length=36, unique=True)
+    uuid = CharField(max_length=36)
     username = CharField(max_length=16)
     rs_server_records: t.Iterable['DB_PlayerRecordsRelationship']
 
@@ -143,7 +143,7 @@ class DB_PlayerRecordsRelationship(BaseModel):
 ALL_MODELS: t.List[t.Type[Model]] = [DB_Server, DB_ServerRecord, DB_Player, DB_PlayerRecordsRelationship]
 
 
-def initialize_database(database_name: Path=Path(f"{datetime.now().strftime(DATABASE_DATETIME_FILE_FORMAT)}.db"), directory_path: Path=DATABASE_PATH, *args, **kwargs) -> SqliteDatabase:
+def initialize_database(database_name: Path=Path(f"database.db"), directory_path: Path=DATABASE_PATH, *args, **kwargs) -> SqliteDatabase:
     database = SqliteDatabase(Path(directory_path, database_name), *args, **kwargs)
     database.bind(ALL_MODELS)
     database.create_tables(ALL_MODELS)

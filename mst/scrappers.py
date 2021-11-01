@@ -53,13 +53,13 @@ class ServerListScrapper():
         raise NotImplementedError()
 
 
-    def scrap(self, from_page: int=1, *args, **kwargs) -> t.Generator[t.List[Server], None, None]:
+    def scrap(self, *args, **kwargs) -> t.Generator[t.List[Server], None, None]:
         """
             Scraps all pages until there are no servers left.
         """
-
-        current_page = from_page
     
+        current_page = self.page
+
         while True:
             servers = self.scrap_page(current_page, *args, **kwargs)
 
@@ -72,7 +72,7 @@ class ServerListScrapper():
 
             # Stop, if we know max_pages:
             _max = getattr(self, 'max_pages', None)
-            if _max and current_page >= _max:
+            if _max is not None and current_page >= _max:
                 break
 
 
@@ -111,10 +111,7 @@ class MinecraftServerListScrapper(ServerListScrapper):
         _raw = self.soup.select_one(r'.paginate > ul > li:nth-last-child(1) > a')
 
         if _raw:
-            try:
-                return int(_raw.get_text(strip=True))
-            except:
-                return None
+            return int(_raw['href'].removeprefix('/sort/PopularAllTime/page/').removesuffix('/'))
 
 
     def scrap_page(self, page_number: int) -> t.List[Server]:
@@ -177,18 +174,11 @@ class ServersMinecraftScrapper(ServerListScrapper):
         _raw = self.soup.select_one(r'ul.pagination > li:nth-last-child(1) > a')
 
         if _raw:
-            try:
-                return int(_raw.get_text().removeprefix('https://servers-minecraft.com/page/'))
-            except:
-                return None
+            return int(_raw['href'].removeprefix('/page/'))
 
 
     def scrap_page(self, page_number: int) -> t.List[Server]:
         self.move_to_page(page_number)
-
-        if self.max_pages and self.page >= self.max_pages:
-            return []
-
 
         all_servers: t.List[Server] = []
         all_ips = self.soup.select(r'.banner-ip button.copy')
@@ -217,10 +207,7 @@ class MinecraftListScrapper(ServerListScrapper):
         _raw = self.soup.select_one(r'ul.pagination > li:nth-last-child(2) > a')
 
         if _raw:
-            try:
-                return int(_raw.get_text(strip=True))
-            except:
-                return None
+            return int(_raw.get_text(strip=True))
 
 
     def scrap_page(self, page_number: int) -> t.List[Server]:
@@ -254,10 +241,7 @@ class MinecraftServersListScrapper(ServerListScrapper):
         _raw = self.soup.select_one(r'ul.pagination > li:nth-last-child(2) > a')
 
         if _raw:
-            try:
-                return int(_raw.get_text(strip=True))
-            except:
-                return None
+            return int(_raw.get_text(strip=True))
 
 
     def scrap_page(self, page_number: int) -> t.List[Server]:
