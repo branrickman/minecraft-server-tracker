@@ -21,5 +21,5 @@ if __name__ == "__main__":
     if uvloop:
         uvloop.install()
 
-
-    asyncio.run(ping_from_all_scrappers_and_save())
+    while True:
+        asyncio.run(ping_from_all_scrappers_and_save())
