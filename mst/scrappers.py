@@ -1,7 +1,6 @@
 import typing as t
 
-from datetime import timedelta
-from requests_cache import CachedSession
+from requests import Session
 from bs4 import BeautifulSoup
 
 from mst.orm import Server
@@ -10,7 +9,7 @@ from mst.orm import Server
 
 class ServerListScrapper():
     def __init__(self, url_template: str, source: t.Optional[str]=None) -> None:
-        self.session = CachedSession(cache_name='requests_cache', expire_after=timedelta(hours=2))
+        self.session = Session()
 
         self.url_template = url_template
         self.source = source
