@@ -1,11 +1,9 @@
-mcstatus
-
-requests
-requests_cache
-
-orm
-
-cchardet
-lxml # might fail on Windows, download and install from https://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml instead if that's the case
-bs4
-typer # cli
+bs4==0.0.1
+cchardet==2.1.7
+lxml==4.9.1
+mcstatus==9.3.0
+orm==0.3.1
+peewee==3.15.1
+requests==2.25.1
+requests-cache==0.9.5
+typer==0.6.1
