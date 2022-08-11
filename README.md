@@ -28,7 +28,7 @@ I never intend this to be used for malicious purposes, such as spreading damage 
 
 First working-as-intended version was made in roughly 5 days (at time of me writing this). It is messy, but gets the job done. If you have ideas or PRs, please create an issue for them. This project will likely be under minimal maintenance, since I don't really have much to do with it and I want to focus on other Python projects. That's also why this project's code structure is quite messy. But it just works.
 
-Use wisely with caution.
+Use wisely and with caution.
 
 
 ## 🎁 Support me
